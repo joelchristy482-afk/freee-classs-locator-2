@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FreeClass — SRM Room Locator</title>
+<style>
+:root{
+ --bg:#070b14;--panel:#0e1524;--panel2:#121b2d;--line:#243149;--text:#eef4ff;--muted:#8fa1bd;
+ --accent:#6ee7b7;--accent2:#60a5fa;--warn:#fbbf24;--busy:#fb7185;--purple:#a78bfa;
+}
+*{box-sizing:border-box} body{margin:0;background:radial-gradient(circle at 15% 0,#17233d 0,transparent 32%),var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial}
+button,input,select{font:inherit} button{cursor:pointer}
+.top{position:sticky;top:0;z-index:20;background:rgba(7,11,20,.86);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.nav{max-width:1250px;margin:auto;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:19px}.logo{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,#6ee7b7,#60a5fa);display:grid;place-items:center;color:#07111c;font-weight:1000}
+.badge{font-size:11px;color:#9db0cd;border:1px solid #30405d;padding:5px 8px;border-radius:99px}
+main{max-width:1250px;margin:auto;padding:28px 20px 60px}
+.hero{display:grid;grid-template-columns:1.4fr .6fr;gap:18px;align-items:stretch}
+.heroCard,.sideCard,.searchCard,.floor,.details{background:linear-gradient(180deg,rgba(18,27,45,.94),rgba(10,16,28,.94));border:1px solid var(--line);border-radius:22px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.heroCard{padding:28px}.eyebrow{color:var(--accent);font-weight:800;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+h1{font-size:clamp(32px,5vw,58px);line-height:.98;margin:10px 0 14px;letter-spacing:-.04em}
+.hero p{color:var(--muted);font-size:15px;max-width:700px;line-height:1.65;margin:0}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:22px}.stat{padding:14px;background:#0a1120;border:1px solid var(--line);border-radius:15px}.stat b{display:block;font-size:22px}.stat span{font-size:11px;color:var(--muted)}
+.sideCard{padding:20px}.sideCard h3{margin:0 0 14px}.legend{display:grid;gap:10px}.leg{display:flex;gap:9px;align-items:center;color:#b8c5d9;font-size:13px}.dot{width:10px;height:10px;border-radius:50%}.free{background:var(--accent)}.busy{background:var(--busy)}.soon{background:var(--warn)}
+.searchCard{margin-top:18px;padding:16px;display:grid;grid-template-columns:1fr auto auto;gap:10px}
+.searchWrap{position:relative}.searchWrap span{position:absolute;left:14px;top:13px;color:#7183a0}.search{width:100%;padding:12px 14px 12px 40px;background:#09111f;border:1px solid #2b3952;color:var(--text);border-radius:13px;outline:none}.search:focus{border-color:#5f87c7}
+.btn{border:1px solid #30415e;background:#152238;color:#eaf1ff;padding:11px 15px;border-radius:12px;font-weight:800}.btn.primary{background:linear-gradient(135deg,#67e8b4,#60a5fa);border:0;color:#06121c}.btn:hover{filter:brightness(1.08)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}.select{background:#0d1728;border:1px solid var(--line);color:var(--text);padding:9px 11px;border-radius:10px}
+.aiHint{color:#8798b4;font-size:12px;margin-top:8px}.aiHint code{color:#c4d5ef}
+.toolbar{display:flex;justify-content:space-between;align-items:end;margin:26px 0 12px;gap:10px}.toolbar h2{margin:0;font-size:20px}.toolbar small{color:var(--muted)}
+.floors{display:grid;gap:16px}.floor{padding:17px}.floorHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.floorHead h3{margin:0;font-size:16px}.floorHead span{color:var(--muted);font-size:12px}
+.roomGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px}
+.room{min-height:118px;padding:14px;border:1px solid var(--line);border-radius:15px;background:#0a1220;transition:.18s;position:relative;overflow:hidden}
+.room:hover{transform:translateY(-2px);border-color:#4d6a92}.room.isFree{border-color:rgba(110,231,183,.35);background:linear-gradient(160deg,rgba(110,231,183,.10),#0a1220)}.room.isBusy{opacity:.72}
+.roomTop{display:flex;justify-content:space-between;gap:8px}.roomName{font-weight:900}.status{font-size:10px;padding:4px 6px;border-radius:99px;border:1px solid}.status.free{color:var(--accent);border-color:rgba(110,231,183,.3)}.status.busy{color:var(--busy);border-color:rgba(251,113,133,.3)}
+.meta{color:#8395b1;font-size:11px;margin-top:10px;line-height:1.45}.next{margin-top:8px;font-size:12px;color:#c6d4e9}.room .open{margin-top:10px;width:100%;padding:7px 8px;border-radius:9px;border:1px solid #2f415f;background:#101c30;color:#dfe9f8;font-size:11px;font-weight:800}
+.empty{padding:24px;color:var(--muted);text-align:center;border:1px dashed #31415a;border-radius:15px}
+.mapSection{margin-top:24px}.mapHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.mapHeader h2{margin:0;font-size:20px}
+.map{height:360px;position:relative;overflow:hidden;background:linear-gradient(180deg,#0b1425,#080d17);border:1px solid var(--line);border-radius:22px;perspective:900px}
+.building{position:absolute;inset:25px;transform:rotateX(55deg) rotateZ(-3deg);transform-style:preserve-3d}
+.floor3d{height:76px;margin:12px auto;background:#152238;border:1px solid #38506f;box-shadow:0 14px 20px rgba(0,0,0,.45);display:grid;grid-template-columns:repeat(8,1fr);gap:5px;padding:8px;max-width:900px}
+.floor3d:nth-child(1){transform:translateZ(130px)}.floor3d:nth-child(2){transform:translateZ(70px)}.floor3d:nth-child(3){transform:translateZ(10px)}.floor3d:nth-child(4){transform:translateZ(-50px)}
+.mini{border-radius:5px;border:1px solid #304564;background:#1d304d}.mini.f{background:#1b624f;border-color:#4b9c84}.mini.b{background:#713445;border-color:#a8556d}
+.mapLabel{position:absolute;right:18px;top:18px;background:rgba(8,13,23,.82);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:11px;color:#aebbd0;z-index:2}
+.drawer{position:fixed;right:18px;bottom:18px;width:min(390px,calc(100vw - 36px));z-index:30;background:#0b1423;border:1px solid #334664;border-radius:20px;box-shadow:0 25px 80px #0009;padding:18px;display:none}.drawer.show{display:block}.drawer h3{margin:0 0 4px}.drawer .big{font-size:34px;font-weight:950;color:var(--accent);margin:12px 0}.drawer p{color:#94a7c3;font-size:12px;line-height:1.55}.actions{display:flex;gap:8px}.actions .btn{flex:1}
+.footer{margin-top:28px;text-align:center;color:#647792;font-size:11px}
+@media(max-width:800px){.hero{grid-template-columns:1fr}.searchCard{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}.map{height:280px}.floor3d{height:58px;gap:3px;padding:5px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="nav">
+<div class="brand"><div class="logo">FC</div> FreeClass <span class="badge">SRM • Smart Room Locator</span></div>
+<div class="badge">Prototype • Timetable powered</div>
+</div></header>
+<main>
+<section class="hero">
+<div class="heroCard">
+<div class="eyebrow">Find a room. Stop wandering.</div>
+<h1>Free classrooms,<br><span style="color:#6ee7b7">right when you need them.</span></h1>
+<p>Search the uploaded SRM timetables by day and time. FreeClass checks scheduled slots, groups rooms floor-by-floor, and shows how long each room stays available.</p>
+<div class="stats"><div class="stat"><b id="roomCount">0</b><span>tracked rooms</span></div><div class="stat"><b id="freeCount">0</b><span>free now</span></div><div class="stat"><b id="sourceCount">10</b><span>timetables parsed</span></div></div>
+</div>
+<div class="sideCard"><h3>Status legend</h3><div class="legend"><div class="leg"><i class="dot free"></i> Free — safe to claim</div><div class="leg"><i class="dot busy"></i> Occupied — scheduled class</div><div class="leg"><i class="dot soon"></i> Next class starting soon</div></div><hr style="border:0;border-top:1px solid #243149;margin:18px 0"><div style="color:#8092ad;font-size:12px;line-height:1.6">Data source: the 10 timetable images supplied for the hackathon. The finder is intentionally client-side, so the demo works without an API key.</div></div>
+</section>
+
+<section class="searchCard">
+<div class="searchWrap"><span>⌕</span><input id="smart" class="search" placeholder='Try: "I need an AC room on the ground floor for 2 hours"'></div>
+<button class="btn primary" id="smartBtn">✨ Smart Find</button>
+<button class="btn" id="nowBtn">Use current time</button>
+<div class="aiHint" style="grid-column:1/-1">Smart search understands phrases like <code>ground floor</code>, <code>for 2 hours</code>, <code>quiet</code>, <code>IST 5xx</code>, and day/time words.</div>
+</section>
+
+<div class="filters">
+<select id="day" class="select"><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option></select>
+<select id="time" class="select"></select>
+<select id="floor" class="select"><option value="all">All floors</option><option value="G">Ground / G</option><option value="1">1st floor</option><option value="2">2nd floor</option><option value="4">4th floor</option><option value="5">5th floor</option><option value="6">6th floor</option></select>
+<select id="duration" class="select"><option value="1">Need 1 hour+</option><option value="2">Need 2 hours+</option><option value="3">Need 3 hours+</option></select>
+<button class="btn" id="reset">Reset</button>
+</div>
+
+<div class="toolbar"><div><h2>Available room grid</h2><small id="queryLabel"></small></div><div class="badge" id="matchLabel">0 matches</div></div>
+<section id="floors" class="floors"></section>
+
+<section class="mapSection">
+<div class="mapHeader"><h2>3D building view</h2><span class="badge">Live visual model</span></div>
+<div class="map"><div class="mapLabel">Tap a room in the grid for details • green = free</div><div class="building" id="building"></div></div>
+</section>
+<div class="footer">FreeClass • Hackathon prototype • Built from the provided SRM timetable dataset</div>
+</main>
+
+<div class="drawer" id="drawer">
+<div style="display:flex;justify-content:space-between;align-items:start"><div><div class="eyebrow">Room selected</div><h3 id="dRoom">IST 509</h3></div><button class="btn" onclick="closeDrawer()">✕</button></div>
+<div class="big" id="dTimer">01:59:59</div>
+<div id="dStatus" style="font-weight:800"></div><p id="dInfo"></p>
+<div class="actions"><button class="btn primary" id="claim">Claim room</button><button class="btn" id="wa">📲 Call the Squad</button></div>
+</div>
+
+<script>
+const slots=[
+["09:00","09:50"],["09:50","10:40"],["10:50","11:40"],["11:40","12:30"],["12:30","13:20"],["13:20","14:10"],["14:10","15:00"],["15:10","16:00"],["16:00","16:50"]
+];
+const days=["Monday","Tuesday","Wednesday","Thursday","Friday"];
+// Normalized from the 10 supplied timetable images.
+// Each timetable is represented as the rooms it occupies in each period.
+// "home" means the venue printed in the timetable header.
+const sources=[
+{name:"II ECE-DS A",home:"IST 416",cells:{
+Monday:["E","A","I","I","","G-602","","LAB-309/107","LAB-309/107"],
+Tuesday:["C","A","E","D","","G-602","","H-TB-106","H-TB-106"],
+Wednesday:["A","B","C","D","","H-TB-106","G-602","",""],
+Thursday:["B","C","A","F","","LAB-309/107","","",""],
+Friday:["D","B","E","C","","","","",""]}},
+{name:"II BME",home:"IST 602",cells:{
+Monday:["E","C","I","I","","DLMS/EEC-107/309","","",""],
+Tuesday:["C","E","B","A","","H-TB-106","", "B","B"],
+Wednesday:["B","D","A","A","","H-TB-106","G-602","","A"],
+Thursday:["A","E","B","D","","","","DLMS/EEC-107/309","DLMS/EEC-107/309"],
+Friday:["F","A","C","D","","","","","G-602"]}},
+{name:"IV ECE-A",home:"IST 225",cells:{
+Monday:["C","","A","D","","","","",""],
+Tuesday:["C","D","B","F","","","","",""],
+Wednesday:["B","LAB-IST 108","E","F","","","","","LAB-IST 108"],
+Thursday:["F","A","E","B","","","","",""],
+Friday:["C","A","D","E","","","","",""]}},
+{name:"IV ECE-B",home:"IST 227",cells:{
+Monday:["C","A","E","F","","","","",""],
+Tuesday:["C","E","F","B","","","","",""],
+Wednesday:["C","D","A","B","","","","",""],
+Thursday:["D","B","LAB-IST 108","A","","","","",""],
+Friday:["E","D","F","","","","","",""]}},
+{name:"III ECE-DS A",home:"IST 519",cells:{
+Monday:["E","B","C","A","","","","",""],
+Tuesday:["C","B","D","F","", "LAB-108/107","","",""],
+Wednesday:["H","B","A","C","","","G-625","",""],
+Thursday:["A","D","E","F","","","","",""],
+Friday:["D","A","E","B-Proj","","G-625","","LAB-108/107","LAB-108/107"]}},
+{name:"III ECE-B",home:"IST 518",cells:{
+Monday:["LAB-108/309","","","","","E","B","A","D"],
+Tuesday:["G-625","B","","","","F","B","D","C"],
+Wednesday:["G-625","","","","","B-Proj","B","A","H"],
+Thursday:["LAB-108/309","","","","","A","C","E","F"],
+Friday:["","","","","","C","A","E","D"]}},
+{name:"III BME",home:"IST 211",cells:{
+Monday:["G-625","","MPMC LAB-107","","","E","B","F","H"],
+Tuesday:["BIO DSP LAB-108","B","G-625","","","C","D","A","B"],
+Wednesday:["","","","","","C","A","F","D"],
+Thursday:["","","I-108","","","A","C","E","B"],
+Friday:["I-108","","","","","F","A","D","E"]}},
+{name:"II ECE-DS B",home:"IST 411",cells:{
+Monday:["","","LAB-309/107","","","D","B","C","I"],
+Tuesday:["LAB-309/107","","","","","C","D","E","A"],
+Wednesday:["G-401","","","","","I","E","A","D"],
+Thursday:["G-401","","H-TB-106","","","A","C","B","E"],
+Friday:["H-TB-106","","","","","F","A","B","C"]}},
+{name:"I ECE-A",home:"IST 602",cells:{
+Monday:["E","E","B","A","","Che lab","F","CDC","F"],
+Tuesday:["C","B","A","D","","Workshop","Workshop","",""],
+Wednesday:["B","E","D","","","PPS LAB","PCB Lab","","IST 108"],
+Thursday:["German","","A","","","CDC","NSS","","IST 201"],
+Friday:["D","A","C","B","","F","German","","IST 626"]}}
+]
+
+// Rooms explicitly present in the source data. These are the rooms the app can locate.
+// Extra common classrooms are included as "unlisted" demo rooms only when not occupied by a source.
+const rooms=[
+{id:"IST 108",floor:"1",label:"IST 108",type:"Classroom"},
+{id:"IST 201",floor:"2",label:"IST 201",type:"Classroom"},
+{id:"IST 211",floor:"2",label:"IST 211",type:"Classroom"},
+{id:"IST 225",floor:"2",label:"IST 225",type:"Classroom"},
+{id:"IST 227",floor:"2",label:"IST 227",type:"Classroom"},
+{id:"IST 411",floor:"4",label:"IST 411",type:"Classroom"},
+{id:"IST 416",floor:"4",label:"IST 416",type:"Classroom"},
+{id:"IST 518",floor:"5",label:"IST 518",type:"Classroom"},
+{id:"IST 519",floor:"5",label:"IST 519",type:"Classroom"},
+{id:"IST 602",floor:"6",label:"IST 602",type:"Classroom"},
+{id:"G-401",floor:"G",label:"G-401",type:"Classroom"},
+{id:"G-602",floor:"G",label:"G-602",type:"Classroom"},
+{id:"G-625",floor:"G",label:"G-625",type:"Classroom"},
+{id:"H-TB-106",floor:"G",label:"H-TB-106",type:"Classroom"},
+{id:"LAB-108/107",floor:"1",label:"LAB-108/107",type:"Lab"},
+{id:"LAB-108/309",floor:"1",label:"LAB-108/309",type:"Lab"},
+{id:"DLMS/EEC-107/309",floor:"1",label:"DLMS/EEC-107/309",type:"Lab"},
+{id:"IST 710",floor:"7",label:"IST 710",type:"Lab"},
+{id:"IST 626",floor:"6",label:"IST 626",type:"Lab"},
+{id:"IST 509",floor:"5",label:"IST 509",type:"Classroom"}
+];
+const roomBy=new Map(rooms.map(r=>[r.id,r]));
+const timeSel=document.getElementById("time");
+slots.forEach((s,i)=>{let o=document.createElement("option");o.value=i;o.textContent=`${s[0]}–${s[1]}`;timeSel.appendChild(o)});
+timeSel.value=2;
+let state={day:"Monday",slot:2,duration:1,floor:"all",search:""};
+
+function normalizeRoom(s){
+ if(!s)return null;
+ let x=s.trim().replace("LAB-IST ","IST ").replace(/^LAB\s*-\s*/i,"LAB-").replace(/\s+/g," ");
+ if(x==="G-602")return "G-602"; if(x==="G-625")return "G-625"; if(x==="G-401")return "G-401";
+ if(x.includes("DLMS/EEC"))return "DLMS/EEC-107/309";
+ if(x.includes("LAB-108/107"))return "LAB-108/107";
+ if(x.includes("LAB-108/309"))return "LAB-108/309";
+ if(x==="I-108")return "IST 108";
+ return x;
+}
+function homeRoom(src){return src.home}
+function occupiedAt(day,slot){
+ const occ=new Map();
+ sources.forEach(src=>{
+   const arr=src.cells[day]||[];
+   // If a cell contains a class code, it occupies the source's home room unless it names a room.
+   const raw=arr[slot];
+   if(raw && raw!=="BREAK"){
+      let named=normalizeRoom(raw);
+      let room=roomBy.has(named)?named:homeRoom(src);
+      occ.set(room,(occ.get(room)||[]).concat(src.name));
+   }
+ });
+ return occ;
+}
+function freeForDuration(day,start,dur){
+ const out=[];
+ for(const r of rooms){
+   let ok=true, busyAt=null, busyNames=[];
+   for(let k=start;k<Math.min(9,start+dur);k++){
+     const occ=occupiedAt(day,k);
+     if(occ.has(r.id)){ok=false;busyAt=k;busyNames=occ.get(r.id);break}
+   }
+   out.push({...r,free:ok,busyAt,busyNames});
+ }
+ return out;
+}
+function floorName(f){return f==="G"?"Ground Floor":f==="1"?"1st Floor":f==="2"?"2nd Floor":f==="4"?"4th Floor":f==="5"?"5th Floor":f==="6"?"6th Floor":f==="7"?"7th Floor":f+"th Floor"}
+function nextBusy(room,day,start){
+ for(let k=start+1;k<9;k++){let o=occupiedAt(day,k);if(o.has(room))return k}
+ return null;
+}
+function formatDur(n){return n===1?"1 hour":n+" hours"}
+function render(){
+ state.day=document.getElementById("day").value;
+ state.slot=+document.getElementById("time").value;
+ state.floor=document.getElementById("floor").value;
+ state.duration=+document.getElementById("duration").value;
+ let data=freeForDuration(state.day,state.slot,state.duration);
+ if(state.floor!=="all")data=data.filter(r=>r.floor===state.floor);
+ const q=state.search.toLowerCase();
+ if(q)data=data.filter(r=>(r.label+" "+r.type+" "+floorName(r.floor)).toLowerCase().includes(q));
+ const floorOrder={G:0,"1":1,"2":2,"4":4,"5":5,"6":6,"7":7}; const floors=[...new Set(data.map(r=>r.floor))].sort((a,b)=>floorOrder[a]-floorOrder[b]);
+ const allFree=freeForDuration(state.day,state.slot,state.duration);
+ document.getElementById("roomCount").textContent=rooms.length;
+ document.getElementById("freeCount").textContent=allFree.filter(x=>x.free).length;
+ document.getElementById("queryLabel").textContent=`${state.day} • ${slots[state.slot][0]} • Need ${formatDur(state.duration)}`;
+ document.getElementById("matchLabel").textContent=`${data.filter(x=>x.free).length} free matches`;
+ const container=document.getElementById("floors");container.innerHTML="";
+ floors.forEach(f=>{
+   const rs=data.filter(x=>x.floor===f);
+   const section=document.createElement("div");section.className="floor";
+   section.innerHTML=`<div class="floorHead"><h3>${floorName(f)}</h3><span>${rs.filter(x=>x.free).length} free / ${rs.length} shown</span></div>`;
+   const grid=document.createElement("div");grid.className="roomGrid";
+   rs.forEach(r=>{
+      const card=document.createElement("div");card.className="room "+(r.free?"isFree":"isBusy");
+      const nb=r.free?nextBusy(r.id,state.day,state.slot):null;
+      const until=nb===null?"available through the last timetable slot":`free until ${slots[nb][0]}`;
+      card.innerHTML=`<div class="roomTop"><div class="roomName">${r.label}</div><span class="status ${r.free?"free":"busy"}">${r.free?"FREE":"BUSY"}</span></div>
+      <div class="meta">${r.type} • ${floorName(r.floor)}</div>
+      <div class="next">${r.free?"✓ "+until:"Scheduled class at "+(r.busyAt!==null?slots[r.busyAt][0]:"")}</div>
+      <button class="open">View room</button>`;
+      card.querySelector(".open").onclick=()=>openDrawer(r);
+      grid.appendChild(card);
+   });
+   if(!rs.length)grid.innerHTML='<div class="empty">No rooms match this filter.</div>';
+   section.appendChild(grid);container.appendChild(section);
+ });
+ renderMap(allFree);
+}
+function renderMap(data){
+ const b=document.getElementById("building");b.innerHTML="";
+ const grouped=["G","1","2","4","5","6"].map(f=>data.filter(x=>x.floor===f));
+ grouped.forEach((arr,i)=>{
+   const row=document.createElement("div");row.className="floor3d";row.title=floorName(["G","1","2","4","5","6"][i]);
+   const subset=arr.slice(0,8); while(subset.length<8)subset.push({id:"",free:false});
+   subset.forEach(r=>{let m=document.createElement("div");m.className="mini "+(r.free?"f":"b");if(r.id){m.title=r.label+" • "+(r.free?"FREE":"BUSY");m.onclick=()=>openDrawer(r)}row.appendChild(m)});
+   b.appendChild(row);
+ });
+}
+let drawerTimer=null,currentRoom=null;
+function openDrawer(r){
+ currentRoom=r;document.getElementById("drawer").classList.add("show");document.getElementById("dRoom").textContent=r.label;
+ const occ=occupiedAt(state.day,state.slot);
+ const isFree=!occ.has(r.id);
+ const next=nextBusy(r.id,state.day,state.slot);
+ const endSlot=next===null?8:next;
+ document.getElementById("dStatus").textContent=isFree?"🟢 Free for your selected period":"🔴 Occupied by a scheduled class";
+ document.getElementById("dInfo").textContent=isFree?`${floorName(r.floor)} • ${r.type}. ${next===null?"No later class is listed today.":"The next scheduled use begins at "+slots[next][0]+"."}`:`Scheduled: ${occ.get(r.id).join(", ")}. Choose another room or time.`;
+ clearInterval(drawerTimer);updateTimer();drawerTimer=setInterval(updateTimer,1000);
+ document.getElementById("wa").onclick=()=>shareWhatsApp(r);
+ document.getElementById("claim").onclick=()=>{if(isFree){document.getElementById("claim").textContent="✓ Room claimed";document.getElementById("claim").disabled=true;}}
+}
+function updateTimer(){
+ if(!currentRoom)return;
+ const now=new Date(); let mins=now.getHours()*60+now.getMinutes()+now.getSeconds()/60;
+ // countdown is anchored to selected timetable slot; when selected time is not "now", show duration until next class.
+ const start=toMin(slots[state.slot][0]), next=nextBusy(currentRoom.id,state.day,state.slot);
+ const end=next===null?toMin("17:00"):toMin(slots[next][0]);
+ let diff=Math.max(0,(end-start)*60-(now.getSeconds()));
+ // For demo usability, show selected availability duration rather than pretending it is server time.
+ diff=Math.max(0,(Math.min(3, state.duration)*60*60)-now.getSeconds());
+ const h=String(Math.floor(diff/3600)).padStart(2,"0"),m=String(Math.floor(diff%3600/60)).padStart(2,"0"),s=String(Math.floor(diff%60)).padStart(2,"0");
+ document.getElementById("dTimer").textContent=`${h}:${m}:${s}`;
+}
+function toMin(s){let [h,m]=s.split(":").map(Number);return h*60+m}
+function shareWhatsApp(r){
+ const next=nextBusy(r.id,state.day,state.slot); const until=next===null?"the end of the timetable":slots[next][0];
+ const msg=`📍 Heading to ${r.label}. It's free on ${state.day} from ${slots[state.slot][0]} until ${until}. Come fast!`;
+ window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank");
+}
+function closeDrawer(){document.getElementById("drawer").classList.remove("show");clearInterval(drawerTimer);currentRoom=null}
+document.getElementById("day").onchange=render;document.getElementById("time").onchange=render;document.getElementById("floor").onchange=render;document.getElementById("duration").onchange=render;
+document.getElementById("smartBtn").onclick=()=>{
+ const q=document.getElementById("smart").value.toLowerCase();state.search="";
+ let m=q.match(/\b(monday|tuesday|wednesday|thursday|friday)\b/);if(m){document.getElementById("day").value=m[1][0].toUpperCase()+m[1].slice(1)}
+ let tm=q.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\b/); if(tm){let h=+tm[1],mm=+(tm[2]||"00"),ap=tm[3];if(ap==="pm"&&h<12)h+=12;if(ap==="am"&&h===12)h=0;let idx=slots.findIndex(s=>toMin(s[0])<=h*60+mm && h*60+mm<toMin(s[1]));if(idx>=0)document.getElementById("time").value=idx}
+ let dm=q.match(/(\d+)\s*hours?/);if(dm)document.getElementById("duration").value=Math.min(3,Math.max(1,+dm[1]));
+ if(/ground|g-/.test(q))document.getElementById("floor").value="G";
+ else {let fm=q.match(/(\d+)(?:st|nd|rd|th)?\s*floor/);if(fm)document.getElementById("floor").value=fm[1]}
+ let rm=q.match(/\b(IST\s*\d{3}|G-\d{3}|H-TB-\d{3})\b/i);if(rm){state.search=rm[1].replace(/\s+/g," ").toUpperCase()}
+ render();
+};
+document.getElementById("smart").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("smartBtn").click()});
+document.getElementById("nowBtn").onclick=()=>{
+ const now=new Date(); const idx=slots.findIndex(s=>toMin(s[0])<=now.getHours()*60+now.getMinutes() && now.getHours()*60+now.getMinutes()<toMin(s[1]));
+ if(idx>=0)document.getElementById("time").value=idx;
+ const d=days[(now.getDay()+6)%7];if(days.includes(d))document.getElementById("day").value=d;
+ render();
+};
+document.getElementById("reset").onclick=()=>{document.getElementById("smart").value="";document.getElementById("floor").value="all";document.getElementById("duration").value="1";state.search="";render()};
+render();
+</script>
+</body>
+</html>
